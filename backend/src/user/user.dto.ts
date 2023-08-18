@@ -1,8 +1,10 @@
+import { Exclude } from 'class-transformer';
 import {
   IsEmail,
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsPhoneNumber,
   IsStrongPassword,
 } from 'class-validator';
 
@@ -15,24 +17,56 @@ export class RegisterUserDto {
   email: string;
 
   @IsNotEmpty()
-  @IsNumber()
   @IsOptional()
-  phoneNumber: number;
+  @IsPhoneNumber()
+  phoneNumber: string;
 
   @IsNotEmpty()
   @IsStrongPassword()
-  password1: string;
-
-  @IsNotEmpty()
-  @IsStrongPassword()
-  password2: string;
+  password: string;
 }
 
-export class RegisterUserResponseDto {
+export class VerifyOTPDto {
   @IsNumber()
   otp: number;
 
-  constructor(partial: Partial<RegisterUserResponseDto>) {
+  @IsNotEmpty()
+  @IsEmail()
+  email: string;
+
+  @IsNotEmpty()
+  hashTimestamp: string;
+}
+
+export class SendOTPDto {
+  @IsNotEmpty()
+  @IsEmail()
+  email: string;
+}
+
+export class UserResponseDto {
+  id: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  isVerfied: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+
+  @Exclude()
+  password: string;
+
+  constructor(partial: Partial<UserResponseDto>) {
     Object.assign(this, partial);
   }
+}
+
+export class LoginDto {
+  @IsNotEmpty()
+  @IsEmail()
+  email: string;
+
+  @IsNotEmpty()
+  @IsStrongPassword()
+  password: string;
 }
