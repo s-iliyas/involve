@@ -93,9 +93,11 @@ export class UserController {
       return this.userService
         .verifiedUser({ email: body.email, isVerified })
         .then((user) => {
-          if (user.isVerfied) {
+          if (user.isVerified) {
+            const data: UserResponseDto = user;
             return {
               message: 'OTP Verified, Please Login again.',
+              user: data,
             };
           } else {
             console.log('[VERIFY_OTP]', 'USER NOT VERFIED IN DB');
@@ -117,7 +119,7 @@ export class UserController {
       throw new HttpException(
         {
           status: HttpStatus.BAD_REQUEST,
-          message: 'Invalid OTP or OTP expired.',
+          error: 'Invalid OTP or OTP expired.',
         },
         HttpStatus.BAD_REQUEST,
       );
@@ -130,7 +132,7 @@ export class UserController {
     const { otp, hashTimestamp } = generateOTP(email);
     const user = await this.userService.getUser(body.email);
     if (user) {
-      if (!user.isVerfied) {
+      if (!user.isVerified) {
         return sendOTP(email, otp)
           .then(() => {
             console.log('[SEND_USER_OTP_CALL]', 'OTP sent to your email');
@@ -221,21 +223,43 @@ export class UserController {
       );
     }
     if (user) {
-      const compare = crypt.compareSync(password, user.password);
-      if (compare) {
-        const token = jwt.sign({ userId: user.id }, process.env.SECRET_KEY, {
-          expiresIn: '1d',
-        });
-        return { user: new UserResponseDto(user), token };
+      if (user.isVerified) {
+        const compare = crypt.compareSync(password, user.password);
+        if (compare) {
+          const token = jwt.sign({ userId: user.id }, process.env.SECRET_KEY, {
+            expiresIn: '1d',
+          });
+          return { user: new UserResponseDto(user), token };
+        } else {
+          console.log('[USER_LOGIN]', 'Incorrect password');
+          throw new HttpException(
+            {
+              status: HttpStatus.BAD_REQUEST,
+              error: 'Incorrect password',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
       } else {
-        console.log('[USER_LOGIN]', 'Incorrect password');
-        throw new HttpException(
-          {
-            status: HttpStatus.BAD_REQUEST,
-            error: 'Incorrect password',
-          },
-          HttpStatus.BAD_REQUEST,
-        );
+        const { otp, hashTimestamp } = generateOTP(email);
+        return sendOTP(email, otp)
+          .then(() => {
+            console.log('[SEND_USER_OTP_CALL]', 'OTP sent to your email');
+            const data: UserResponseDto = user;
+            return {
+              message: 'OTP sent to your email',
+              hash: hashTimestamp,
+              user: data,
+            };
+          })
+          .catch((error) => {
+            console.log('[SEND_USER_OTP_CALL]', error);
+            throw new HttpException(
+              { status: HttpStatus.BAD_REQUEST, error: error.message },
+              HttpStatus.BAD_REQUEST,
+              { cause: error },
+            );
+          });
       }
     } else {
       console.log('[USER_LOGIN]', 'User does not exist, please register.');

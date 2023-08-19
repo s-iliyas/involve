@@ -1,27 +1,27 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { ModeToggle } from "../toggleTheme";
-import { LogInIcon, UserCircle } from "lucide-react";
+import { LogInIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import MainNav from "./mainNav";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "next-themes";
+import { useAppSelector } from "@/hooks/store";
+import ProfileBtn from "./profileBtn";
 
 const Navbar = () => {
-  const [mount, setMount] = useState<string|undefined>("");
+  const [mount, setMount] = useState<string | undefined>("");
+
   const { theme } = useTheme();
+
+  let token = useAppSelector((state) => state.user.involveToken);
 
   useEffect(() => {
     setMount(theme);
-  }, [theme]);
-  
+  }, [theme, token]);
+
   if (!mount) return null;
-
-
-  const token =
-    typeof localStorage !== "undefined" && localStorage.getItem("involveToken");
 
   return (
     <div
@@ -38,18 +38,7 @@ const Navbar = () => {
       <div className="flex flex-row justify-evenly gap-x-2 items-center">
         <ModeToggle />
         {token ? (
-          <Button
-            variant={"ghost"}
-            size="icon"
-            className="hover:bg-transparent"
-          >
-            <Image
-              height={20}
-              width={20}
-              src="/images/user.png"
-              alt="user icon"
-            />
-          </Button>
+          <ProfileBtn />
         ) : (
           <Button asChild className="cursor-pointer">
             <Link href={"/login"} className="gap-x-1 flex items-center">

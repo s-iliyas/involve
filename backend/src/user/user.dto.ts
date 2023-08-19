@@ -49,7 +49,7 @@ export class UserResponseDto {
   name: string;
   email: string;
   phoneNumber: string;
-  isVerfied: boolean;
+  isVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 

@@ -18,12 +18,12 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/hooks/store";
-import { decrement } from "@/store/user/slice";
+import { decrement, setCount, setHash, setUser } from "@/store/user/slice";
 import { cn } from "@/lib/utils";
 
 const OTPForm = () => {
   const [errMsg, setErrMsg] = useState("");
-  const [disabled, setDisabled] = useState(false);
+  const [disabled, setDisabled] = useState(true);
   const [successMsg, setSuccessMsg] = useState("");
 
   const dispatch = useAppDispatch();
@@ -31,8 +31,12 @@ const OTPForm = () => {
 
   const count = useAppSelector((state) => state.user.count);
   const email = useAppSelector((state) => state.user.user.email);
-  const hash = useAppSelector((state) => state.user.hash);
 
+  if (!email) {
+    router.push("/");
+  }
+
+  const hash = useAppSelector((state) => state.user.hash);
   const formSchema = z.object({
     otp: z.string().max(4),
   });
@@ -56,13 +60,13 @@ const OTPForm = () => {
         hashTimestamp: hash,
         otp: parseInt(body.otp),
       };
-      console.log(data);
       axios
         .post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/verify/otp`, data, {
           headers: { "Content-Type": "application/json" },
         })
         .then((res) => {
           setSuccessMsg(res?.data?.message);
+          dispatch(setUser(res?.data?.user));
           setTimeout(() => {
             router.push("/login");
           }, 3000);
@@ -75,6 +79,30 @@ const OTPForm = () => {
           }
         });
     }
+  };
+
+  const sendOTP = async () => {
+    const data = { email };
+    axios
+      .post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/send/otp`, data, {
+        headers: { "Content-Type": "application/json" },
+      })
+      .then((res) => {
+        setSuccessMsg(res?.data?.message);
+        dispatch(setUser(res?.data?.user));
+        dispatch(setHash(res?.data?.hash));
+      })
+      .catch((err) => {
+        if (err?.response?.data?.error) {
+          setErrMsg(err?.response?.data?.error);
+        } else {
+          setErrMsg("Something went wrong.");
+        }
+      })
+      .finally(() => {
+        dispatch(setCount(60));
+        setDisabled(true);
+      });
   };
 
   useEffect(() => {
@@ -90,6 +118,9 @@ const OTPForm = () => {
       decrementInterval = setInterval(() => {
         dispatch(decrement(1));
       }, 1000);
+    }
+    if (count === 0) {
+      setDisabled(false);
     }
   }, []);
 
@@ -120,7 +151,7 @@ const OTPForm = () => {
         />
         <Button
           type="submit"
-          className="bg-yellow-500 w-[15rem] transition-colors text-lg duration-500 text-black hover:text-white"
+          className="bg-yellow-500 w-[15rem] transition-colors text-lg duration-500 text-black hover:text-white hover:bg-sky-600"
         >
           <strong>Submit</strong>
         </Button>
@@ -131,8 +162,9 @@ const OTPForm = () => {
             "bg-yellow-500 w-[15rem] text-black flex flex-row space-x-2 items-center justify-center ",
             disabled
               ? "cursor-wait"
-              : "transition-colors text-lg duration-500  hover:text-white"
+              : "transition-colors text-lg duration-500  hover:text-white hover:bg-sky-600"
           )}
+          onClick={sendOTP}
         >
           <strong>Request OTP</strong>
           {disabled && (

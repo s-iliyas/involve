@@ -15,15 +15,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { SetStateAction, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
-import { setHash, setUser } from "@/store/user/slice";
+import { setCount, setHash, setUser } from "@/store/user/slice";
 import { useRouter } from "next/navigation";
 
 const RegisterForm = () => {
   const [errMsg, setErrMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [disabled, setDisabled] = useState(false);
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -52,6 +53,7 @@ const RegisterForm = () => {
   });
 
   const onSubmit = async (body: z.infer<typeof formSchema>) => {
+    setDisabled(true);
     const data = {
       email: body.email,
       phoneNumber: body.phoneNumber,
@@ -64,9 +66,10 @@ const RegisterForm = () => {
       })
       .then((res) => {
         setSuccessMsg(res?.data?.message);
-        dispatch(setUser(res?.data?.user));
+        dispatch(setUser(res?.data?.user))
         dispatch(setHash(res?.data?.hash));
-        router.push("/otp")
+        dispatch(setCount(60))
+        router.push("/otp");
       })
       .catch((err) => {
         if (err?.response?.data?.message?.length > 0) {
@@ -76,6 +79,9 @@ const RegisterForm = () => {
         } else {
           setErrMsg("Something went wrong.");
         }
+      })
+      .finally(() => {
+        setDisabled(false);
       });
   };
 
@@ -182,7 +188,8 @@ const RegisterForm = () => {
         </strong>
         <Button
           type="submit"
-          className="bg-yellow-500 transition-colors text-lg duration-500 text-black hover:text-white hover:bg-neutral-800"
+          disabled={disabled}
+          className="bg-yellow-500 transition-colors text-lg duration-500 text-black hover:text-white hover:bg-sky-600"
         >
           <strong>Register</strong>
         </Button>

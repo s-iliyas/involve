@@ -44,7 +44,7 @@ export class UserService {
   }): Promise<User> {
     return await this.prisma.user.update({
       where: { email: body.email },
-      data: { isVerfied: body.isVerified },
+      data: { isVerified: body.isVerified },
     });
   }
 

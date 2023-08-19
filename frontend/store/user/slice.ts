@@ -1,4 +1,4 @@
-import { createEntityAdapter, createSlice } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 
 interface User {
   name: string;
@@ -6,15 +6,16 @@ interface User {
   phoneNumber: string;
   createdAt: string;
   updatedAt: string;
-  isVerfied: string;
+  isVerified: string;
   id: string;
 }
 
 const initialState: {
-  user: User ;
+  user: User;
   hash: string;
   count: number;
   apiUserMessage: string;
+  involveToken: string;
 } = {
   user: {
     name: "",
@@ -22,12 +23,13 @@ const initialState: {
     phoneNumber: "",
     createdAt: "",
     updatedAt: "",
-    isVerfied: "",
-    id: ""
+    isVerified: "",
+    id: "",
   },
   hash: "",
   count: 60,
   apiUserMessage: "holaa",
+  involveToken: "",
 };
 
 export const userSlice = createSlice({
@@ -37,8 +39,14 @@ export const userSlice = createSlice({
     setUser: (state, action) => {
       state.user = action.payload;
     },
+    setCount: (state, action) => {
+      state.count = action.payload;
+    },
     setHash: (state, action) => {
       state.hash = action.payload;
+    },
+    setInvolveToken: (state, action) => {
+      state.involveToken = action.payload;
     },
     decrement: (state, action) => {
       if (state.count > 0) {
@@ -51,6 +59,12 @@ export const userSlice = createSlice({
   },
 });
 
-export const { setUser, setHash, decrement, setApiUserMessage } =
-  userSlice.actions;
+export const {
+  setUser,
+  setHash,
+  decrement,
+  setApiUserMessage,
+  setInvolveToken,
+  setCount,
+} = userSlice.actions;
 export default userSlice.reducer;

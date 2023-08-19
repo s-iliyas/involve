@@ -17,9 +17,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import Link from "next/link";
+import {
+  setCount,
+  setHash,
+  setInvolveToken,
+  setUser,
+} from "@/store/user/slice";
+import { useDispatch } from "react-redux";
+import { useRouter } from "next/navigation";
 
 const LoginForm = () => {
   const [errMsg, setErrMsg] = useState("");
+  const [disabled, setDisabled] = useState(false);
+
+  const dispatch = useDispatch();
+  const router = useRouter();
 
   const formSchema = z.object({
     email: z.string().email(),
@@ -35,13 +47,22 @@ const LoginForm = () => {
   });
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    console.log(data);
+    setDisabled(true);
     axios
       .post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/login`, data, {
         headers: { "Content-Type": "application/json" },
       })
       .then((res) => {
-        console.log(res.data);
+        if (res?.data?.user?.isVerified) {
+          dispatch(setUser(res?.data?.user));
+          dispatch(setHash(""));
+          dispatch(setInvolveToken(res?.data?.token));
+          router.push("/");
+        } else {
+          dispatch(setUser(res?.data?.user));
+          dispatch(setHash(res?.data?.hash));
+          router.push("/otp");
+        }
       })
       .catch((err) => {
         if (err?.response?.data?.error) {
@@ -49,6 +70,10 @@ const LoginForm = () => {
         } else {
           setErrMsg("Something went wrong.");
         }
+      })
+      .finally(() => {
+        setDisabled(false);
+        dispatch(setCount(60));
       });
   };
 
@@ -107,7 +132,8 @@ const LoginForm = () => {
         </strong>
         <Button
           type="submit"
-          className="bg-yellow-500 transition-colors text-lg duration-500 text-black hover:text-white"
+          disabled={disabled}
+          className="bg-yellow-500 transition-colors text-lg duration-500 text-black hover:text-white hover:bg-sky-600"
         >
           <strong>Login</strong>
         </Button>
