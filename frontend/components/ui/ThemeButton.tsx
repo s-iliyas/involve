@@ -9,7 +9,7 @@ const ThemeButton = () => {
 
   return (
     <button
-      className="text-gray-500"
+      className="text-gray-500 hover:text-sky-300"
       onClick={() => theme?.setDarkMode(!theme?.darkMode)}
     >
       {theme?.darkMode ? <FiSun /> : <FiMoon />}

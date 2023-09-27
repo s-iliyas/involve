@@ -34,7 +34,7 @@ export class UserController {
 
   @Post('register')
   async register(@Body() body: RegisterUserDto) {
-    const old = await this.userService.getUser(body.email);
+    const old = await this.userService.getUserByEmail(body.email);
     if (old) {
       console.log('[CREATE_USER]', 'User already exists with this email.');
       throw new HttpException(
@@ -42,6 +42,19 @@ export class UserController {
         HttpStatus.BAD_REQUEST,
       );
     } else {
+      const oldUser = await this.userService.getUserByPhoneNumber(
+        body.phoneNumber,
+      );
+      if (oldUser) {
+        console.log(
+          '[CREATE_USER]',
+          'User already exists with this phone number.',
+        );
+        throw new HttpException(
+          { status: HttpStatus.BAD_REQUEST, error: 'User already exists' },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
       const salt = crypt.genSaltSync(10);
       body.password = crypt.hashSync(body.password, salt);
       return this.userService
@@ -55,7 +68,7 @@ export class UserController {
               HttpStatus.BAD_REQUEST,
             );
           } else {
-            const { otp, hashTimestamp } = generateOTP(email);
+            const { otp, hashTimestamp } = generateOTP(user.id);
             return sendOTP(email, otp)
               .then(() => {
                 console.log('[SEND_OTP_CALL]', 'OTP sent to your email');
@@ -91,7 +104,7 @@ export class UserController {
     const isVerified = verify(body);
     if (isVerified) {
       return this.userService
-        .verifiedUser({ email: body.email, isVerified })
+        .verifiedUser({ id: body.userId, isVerified })
         .then((user) => {
           if (user.isVerified) {
             const data: UserResponseDto = user;
@@ -128,12 +141,12 @@ export class UserController {
 
   @Post('send/otp')
   async sendUserOTP(@Body() body: SendOTPDto) {
-    const { email } = body;
-    const { otp, hashTimestamp } = generateOTP(email);
-    const user = await this.userService.getUser(body.email);
+    const { id } = body;
+    const { otp, hashTimestamp } = generateOTP(id);
+    const user = await this.userService.getUserById(body.id);
     if (user) {
       if (!user.isVerified) {
-        return sendOTP(email, otp)
+        return sendOTP(user.email, otp)
           .then(() => {
             console.log('[SEND_USER_OTP_CALL]', 'OTP sent to your email');
             const data: UserResponseDto = user;
@@ -213,7 +226,7 @@ export class UserController {
     const { email, password } = body;
     let user: User;
     try {
-      user = await this.userService.getUser(email);
+      user = await this.userService.getUserByEmail(email);
     } catch (error) {
       console.log('[USER_LOGIN]', error);
       throw new HttpException(
@@ -241,7 +254,7 @@ export class UserController {
           );
         }
       } else {
-        const { otp, hashTimestamp } = generateOTP(email);
+        const { otp, hashTimestamp } = generateOTP(user.id);
         return sendOTP(email, otp)
           .then(() => {
             console.log('[SEND_USER_OTP_CALL]', 'OTP sent to your email');

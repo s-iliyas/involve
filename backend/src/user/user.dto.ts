@@ -31,8 +31,7 @@ export class VerifyOTPDto {
   otp: number;
 
   @IsNotEmpty()
-  @IsEmail()
-  email: string;
+  userId: string;
 
   @IsNotEmpty()
   hashTimestamp: string;
@@ -40,8 +39,7 @@ export class VerifyOTPDto {
 
 export class SendOTPDto {
   @IsNotEmpty()
-  @IsEmail()
-  email: string;
+  id: string;
 }
 
 export class UserResponseDto {

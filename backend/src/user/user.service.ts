@@ -38,18 +38,19 @@ export class UserService {
     return await this.prisma.user.create({ data: body });
   }
 
-  async verifiedUser(body: {
-    email: string;
-    isVerified: boolean;
-  }): Promise<User> {
+  async verifiedUser(body: { id: string; isVerified: boolean }): Promise<User> {
     return await this.prisma.user.update({
-      where: { email: body.email },
+      where: { id: body.id },
       data: { isVerified: body.isVerified },
     });
   }
 
-  async getUser(email: string): Promise<User> {
+  async getUserByEmail(email: string): Promise<User> {
     return await this.prisma.user.findUnique({ where: { email } });
+  }
+
+  async getUserByPhoneNumber(phoneNumber: string): Promise<User> {
+    return await this.prisma.user.findUnique({ where: { phoneNumber } });
   }
 
   async getUserById(id: string): Promise<User> {

@@ -2,18 +2,18 @@ import * as cryptojs from 'crypto-js';
 import * as sg from '@sendgrid/mail';
 
 export const generateOTP = (
-  email: string,
+  id: string,
 ): { otp: number; hashTimestamp: string } => {
   const otp = Math.floor(1000 + Math.random() * 9000);
   const expires = Date.now() + 300000;
-  const data = `${email}.${otp}.${expires}`;
+  const data = `${id}.${otp}.${expires}`;
   const hash = cryptojs.HmacSHA256(data, process.env.SECRET_KEY);
   const hashTimestamp = `${hash}.${expires}`;
   return { otp, hashTimestamp };
 };
 
 interface Params {
-  email: string;
+  userId: string;
   otp: number;
   hashTimestamp: string;
 }
@@ -22,7 +22,7 @@ export const verify = (params: Params): boolean => {
   const [hash, expires] = params.hashTimestamp.split('.');
   const now = Date.now();
   if (now > parseInt(expires)) return false;
-  const data = `${params.email}.${params.otp}.${expires}`;
+  const data = `${params.userId}.${params.otp}.${expires}`;
   const newHash = cryptojs.HmacSHA256(data, process.env.SECRET_KEY).toString();
   return newHash === hash ? true : false;
 };

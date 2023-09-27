@@ -2,3 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+::-webkit-scrollbar {
+  width: 0;
+}
+
+.ant-input::placeholder {
+  color: rgb(73, 73, 73);
+}
+
+.ant-input,
+.ant-input-password {
+  background-color: transparent;
+  color: inherit;
+}
+
+.ant-input-suffix {
+  background-color: rgb(255, 255, 255);
+  border-radius: 100%;
+  margin-top: 4px;
+  height: 100%;
+}

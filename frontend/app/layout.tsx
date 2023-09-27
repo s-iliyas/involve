@@ -1,10 +1,7 @@
-import { ThemeProvider } from "@/contexts/ThemeProvider";
 import "./globals.css";
 import type { Metadata } from "next";
 import { Alegreya } from "next/font/google";
-import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
-import MainComponent from "./main";
+import MainProvider from "./main";
 
 const inter = Alegreya({ subsets: ["greek"] });
 
@@ -21,13 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ThemeProvider>
-          <MainComponent>
-            <Navbar />
-            {children}
-            <Footer />
-          </MainComponent>
-        </ThemeProvider>
+        <MainProvider>{children}</MainProvider>
       </body>
     </html>
   );
