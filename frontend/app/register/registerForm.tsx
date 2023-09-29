@@ -42,11 +42,15 @@ const RegisterForm = () => {
             phoneNumber: formData.phoneNumber?.trim(),
             password: formData.password?.trim(),
           },
-          { headers: { "Content-Type": "application/json" } }
+          {
+            headers: { "Content-Type": "application/json" },
+            withCredentials: true,
+          }
         )
         .then((response) => {
           dispatch(setUserDetails(response?.data?.user));
           localStorage.setItem("involveUH", response?.data?.hash);
+          localStorage.setItem("involveTk", response?.data?.token);
           setMsg({
             message: response?.data?.message,
             error: false,
@@ -56,7 +60,7 @@ const RegisterForm = () => {
         .catch((err) => {
           setMsg({
             message:
-              err?.response?.data?.message[0] ||
+              err?.response?.data?.message?.[0] ||
               err?.response?.data?.error ||
               err?.message,
             error: true,
@@ -84,8 +88,7 @@ const RegisterForm = () => {
       )
       .then((response) => {
         dispatch(setUserDetails(response?.data?.user));
-        localStorage.removeItem("involveUH"),
-        push("/");
+        localStorage.removeItem("involveUH"), push("/");
       })
       .catch((err) => {
         setMsg({
@@ -97,6 +100,7 @@ const RegisterForm = () => {
         });
       });
   };
+
   return (
     <form className="flex flex-col p-5 md:w-[40%] mx-auto sm:w-[50%] space-y-5 justify-center items-center">
       {!showOTP && (

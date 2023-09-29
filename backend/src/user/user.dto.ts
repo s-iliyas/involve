@@ -51,7 +51,7 @@ export class UserResponseDto {
   createdAt: Date;
   updatedAt: Date;
 
-  @Exclude()
+  @Exclude({ toPlainOnly: true })
   password: string;
 
   constructor(partial: Partial<UserResponseDto>) {

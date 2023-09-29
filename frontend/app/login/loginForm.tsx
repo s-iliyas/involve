@@ -55,7 +55,7 @@ const LoginForm = () => {
       .catch((err) => {
         setMsg({
           message:
-            err?.response?.data?.message[0] ||
+            err?.response?.data?.message?.[0] ||
             err?.response?.data?.error ||
             err?.message,
           error: true,

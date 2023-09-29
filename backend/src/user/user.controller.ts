@@ -51,7 +51,10 @@ export class UserController {
           'User already exists with this phone number.',
         );
         throw new HttpException(
-          { status: HttpStatus.BAD_REQUEST, error: 'User already exists' },
+          {
+            status: HttpStatus.BAD_REQUEST,
+            error: 'User already exists with this phone number.',
+          },
           HttpStatus.BAD_REQUEST,
         );
       }
@@ -69,13 +72,14 @@ export class UserController {
             );
           } else {
             const { otp, hashTimestamp } = generateOTP(user.id);
+            const userResponseData = new UserResponseDto(user);
             return sendOTP(email, otp)
               .then(() => {
                 console.log('[SEND_OTP_CALL]', 'OTP sent to your email');
                 return {
                   message: 'OTP sent to your email',
                   hash: hashTimestamp,
-                  user: new UserResponseDto(user),
+                  user: userResponseData,
                 };
               })
               .catch((error) => {
@@ -100,14 +104,34 @@ export class UserController {
   }
 
   @Post('verify/otp')
-  async verifyOTP(@Body() body: VerifyOTPDto) {
+  async verifyOTP(@Body() body: VerifyOTPDto, @Res() response: Response) {
     const isVerified = verify(body);
     if (isVerified) {
       return this.userService
         .verifiedUser({ id: body.userId, isVerified })
         .then((user) => {
           if (user.isVerified) {
-            const data: UserResponseDto = user;
+            const data = new UserResponseDto(user);
+            response.cookie(
+              'involve',
+              JSON.stringify({
+                user: data,
+                token: jwt.sign({ userId: user.id }, process.env.SECRET_KEY, {
+                  expiresIn: '1h',
+                }),
+                refreshToken: jwt.sign(
+                  { userId: user.id },
+                  process.env.SECRET_KEY,
+                  {
+                    expiresIn: '1d',
+                  },
+                ),
+              }),
+              {
+                expires: new Date(Date.now() + 86400000),
+                httpOnly: true,
+              },
+            );
             return {
               message: 'OTP Verified, Please Login again.',
               user: data,
@@ -204,7 +228,8 @@ export class UserController {
         );
       }
       if (user) {
-        return new UserResponseDto(user);
+        const userResponseData = new UserResponseDto(user);
+        return userResponseData;
       } else {
         console.log('[GET_USER_BY_ID]', 'INVALID USER ID');
         throw new HttpException(
@@ -222,7 +247,7 @@ export class UserController {
   }
 
   @Post('login')
-  async login(@Body() body: LoginDto) {
+  async login(@Res() res: Response, @Body() body: LoginDto) {
     const { email, password } = body;
     let user: User;
     try {
@@ -242,7 +267,30 @@ export class UserController {
           const token = jwt.sign({ userId: user.id }, process.env.SECRET_KEY, {
             expiresIn: '1d',
           });
-          return { user: new UserResponseDto(user), token };
+          const userResponseData = new UserResponseDto(user);
+          console.log(userResponseData);
+
+          res.cookie(
+            'involve',
+            JSON.stringify({
+              user: userResponseData,
+              token: jwt.sign({ userId: user.id }, process.env.SECRET_KEY, {
+                expiresIn: '1h',
+              }),
+              refreshToken: jwt.sign(
+                { userId: user.id },
+                process.env.SECRET_KEY,
+                {
+                  expiresIn: '1d',
+                },
+              ),
+            }),
+            {
+              expires: new Date(Date.now() + 86400000),
+              httpOnly: true,
+            },
+          );
+          res.status(HttpStatus.OK).json(token);
         } else {
           console.log('[USER_LOGIN]', 'Incorrect password');
           throw new HttpException(

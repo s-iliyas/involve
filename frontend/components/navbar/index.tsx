@@ -6,9 +6,11 @@ import { usePathname } from "next/navigation";
 
 const Navbar = () => {
   const pathname = usePathname();
+
   const navItems = [{ title: "Home", path: "/", active: pathname === "/" }];
 
-  const token = localStorage.getItem("involveTk");
+  const token =
+    typeof localStorage !== "undefined" && localStorage.getItem("involveTk");
 
   return (
     <div className="p-2 h-14 w-full flex flex-row justify-around items-center  fixed  bg-inherit">
@@ -30,14 +32,17 @@ const Navbar = () => {
           {!token ? (
             <Link
               href={"/login"}
-              className="hover:text-sky-300 md:hidden block px-3 rounded-md font-semibold text-lg"
+              className="hover:text-sky-300 hidden md:block px-3 rounded-md font-semibold text-lg"
             >
               Login
             </Link>
           ) : (
             <button
               className="hover:text-orange-300 md:block hidden text-lg"
-              onClick={() => localStorage.clear()}
+              onClick={() => {
+                localStorage.clear();
+                window.location.href = "/";
+              }}
             >
               Logout
             </button>
