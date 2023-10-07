@@ -1,11 +1,11 @@
 import React from "react";
 
-const Chat = () => {
+const Buddy = () => {
   return (
     <div className="min-h-screen flex flex-col justify-center items-center">
-      Chat
+      Buddy
     </div>
   );
 };
 
-export default Chat;
+export default Buddy;

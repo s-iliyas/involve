@@ -22,9 +22,9 @@ const Navbar = () => {
       show: !!accessToken,
     },
     {
-      title: "Chat",
-      path: "/chat",
-      active: pathname === "/chat",
+      title: "Buddy",
+      path: "/buddy",
+      active: pathname === "/buddy",
       show: !!accessToken,
     },
   ];
