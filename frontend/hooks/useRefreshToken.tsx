@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import { useState } from "react";
 import axios from "axios";
 
 const useRefreshToken = (accessToken: string) => {
   const [token, setToken] = useState(accessToken);
-  const error = localStorage.getItem("__involve_login_error");
+  const error =
+    typeof localStorage !== "undefined" &&
+    localStorage.getItem("__involve_login_error");
 
-  const getToken = async (permit?: boolean) => {
+  let getToken = async (permit?: boolean) => {
     if ((!accessToken || permit) && !error) {
       try {
         const response = await axios.get(
