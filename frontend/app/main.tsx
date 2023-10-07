@@ -7,28 +7,26 @@ import { RootState, store } from "@/store";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { useAppDispatch, useAppSelector } from "@/hooks/store";
-import { setUserDetails } from "@/store/slices/user.slice";
+import { setAccessToken } from "@/store/slices/user.slice";
 import { ThemeContext, ThemeProvider } from "@/contexts/ThemeProvider";
+import useRefreshToken from "@/hooks/useRefreshToken";
 
 const MainComponent = ({ children }: { children: React.ReactNode }) => {
   const theme = useContext(ThemeContext);
   const dispatch = useAppDispatch();
-  const userDetails = useAppSelector(
-    (state: RootState) => state.user.userDetails
+
+  const accessToken = useAppSelector(
+    (state: RootState) => state.user.accessToken
   );
-  console.log(userDetails);
-  
-  // useEffect(() => {
-  //   const tokenCookie = document?.cookie
-  //     ?.split(";")
-  //     ?.filter((row) => row?.startsWith("involveTC"));
-  //   if (tokenCookie[0]) {
-  //     const userData = JSON.parse(tokenCookie[0]?.split("=")[1]);
-  //     console.log(userData);
-  //     dispatch(setUserDetails(userData));
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, []);
+
+  const { token, getToken } = useRefreshToken(accessToken);
+
+  useEffect(() => {
+    if (!token) {
+      getToken();
+    }
+    dispatch(setAccessToken(token));
+  }, [dispatch, getToken, token]);
 
   return (
     <div

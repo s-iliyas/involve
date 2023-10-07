@@ -1,5 +1,6 @@
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Delete,
   Get,
@@ -7,7 +8,9 @@ import {
   HttpStatus,
   Param,
   Post,
+  Req,
   Res,
+  UseInterceptors,
 } from '@nestjs/common';
 import * as crypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
@@ -17,12 +20,13 @@ import {
   SendOTPDto,
   UserResponseDto,
   VerifyOTPDto,
-} from './user.dto';
-import { Response } from 'express';
+} from './dto/user.dto';
+import { Response, Request } from 'express';
 import { UserService } from './user.service';
 import { generateOTP, sendOTP, verify } from 'src/actions/otp';
 import { User } from '@prisma/client';
 
+@UseInterceptors(ClassSerializerInterceptor)
 @Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -30,6 +34,35 @@ export class UserController {
   @Get()
   api(@Res() res: Response) {
     return res.status(200).json({ message: 'User API Working...' });
+  }
+
+  @Get('token')
+  getToken(@Req() req: Request, @Res() res: Response) {
+    const refreshToken = req?.cookies?.__involve_refreshToken;
+    if (refreshToken) {
+      try {
+        const payload = jwt.verify(refreshToken, process.env.SECRET_KEY) as {
+          userId: string;
+        };
+        const accessToken: string = jwt.sign(
+          { userId: payload?.userId },
+          process.env.SECRET_KEY,
+          { expiresIn: '1h' },
+        );
+        res.status(200).json({ accessToken });
+      } catch (error) {
+        console.log(error.message);
+        res.status(400).json({ message: error.message });
+      }
+    } else {
+      res.status(200).json({ message: 'Please login.' });
+    }
+  }
+
+  @Get('logout')
+  logout(@Req() req: Request, @Res() res: Response) {
+    res.clearCookie('__involve_refreshToken');
+    res.status(200).json({ message: 'You have been logged out.' });
   }
 
   @Post('register')
@@ -261,36 +294,29 @@ export class UserController {
       );
     }
     if (user) {
+      const userResponseData = {
+        email: user.email,
+        name: user.name,
+        phoneNumber: user.phoneNumber,
+        isVerified: user.isVerified,
+      };
       if (user.isVerified) {
         const compare = crypt.compareSync(password, user.password);
         if (compare) {
-          const token = jwt.sign({ userId: user.id }, process.env.SECRET_KEY, {
-            expiresIn: '1d',
-          });
-          const userResponseData = new UserResponseDto(user);
-          console.log(userResponseData);
-
           res.cookie(
-            'involve',
-            JSON.stringify({
-              user: userResponseData,
-              token: jwt.sign({ userId: user.id }, process.env.SECRET_KEY, {
-                expiresIn: '1h',
-              }),
-              refreshToken: jwt.sign(
-                { userId: user.id },
-                process.env.SECRET_KEY,
-                {
-                  expiresIn: '1d',
-                },
-              ),
+            '__involve_refreshToken',
+            jwt.sign({ userId: user.id }, process.env.SECRET_KEY, {
+              expiresIn: '1d',
             }),
             {
               expires: new Date(Date.now() + 86400000),
               httpOnly: true,
+              sameSite: 'strict',
             },
           );
-          res.status(HttpStatus.OK).json(token);
+          res.status(HttpStatus.OK).json({
+            user: userResponseData,
+          });
         } else {
           console.log('[USER_LOGIN]', 'Incorrect password');
           throw new HttpException(
@@ -306,11 +332,10 @@ export class UserController {
         return sendOTP(email, otp)
           .then(() => {
             console.log('[SEND_USER_OTP_CALL]', 'OTP sent to your email');
-            const data: UserResponseDto = user;
             return {
               message: 'OTP sent to your email',
               hash: hashTimestamp,
-              user: data,
+              user: userResponseData,
             };
           })
           .catch((error) => {

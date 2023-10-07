@@ -6,6 +6,8 @@ interface InitialState {
     name: string;
     id: string;
   };
+  accessToken: string;
+  refreshToken: string;
 }
 
 const initialState: InitialState = {
@@ -13,6 +15,8 @@ const initialState: InitialState = {
     name: "",
     id: "",
   },
+  refreshToken: "",
+  accessToken: "",
 };
 
 export const userSlice = createSlice({
@@ -22,9 +26,16 @@ export const userSlice = createSlice({
     setUserDetails(state, action) {
       state.userDetails = action.payload;
     },
+    setAccessToken(state, action) {
+      state.accessToken = action.payload;
+    },
+    setRefreshToken(state, action) {
+      state.refreshToken = action.payload;
+    },
   },
 });
 
-export const { setUserDetails } = userSlice.actions;
+export const { setUserDetails, setAccessToken, setRefreshToken } =
+  userSlice.actions;
 
 export default userSlice.reducer;

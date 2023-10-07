@@ -1,8 +1,9 @@
 "use client";
 
 import { useAppDispatch, useAppSelector } from "@/hooks/store";
+import useRefreshToken from "@/hooks/useRefreshToken";
 import { RootState } from "@/store";
-import { setUserDetails } from "@/store/slices/user.slice";
+import { setAccessToken, setUserDetails } from "@/store/slices/user.slice";
 import { Input } from "antd";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -26,6 +27,7 @@ const LoginForm = () => {
 
   const [showOTP, setShowOTP] = useState(false);
   const [otp, setOTP] = useState("");
+  const { token, getToken } = useRefreshToken("");
 
   const handleLogin = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
@@ -36,11 +38,13 @@ const LoginForm = () => {
           email: formData.email?.trim(),
           password: formData.password?.trim(),
         },
-        { headers: { "Content-Type": "application/json" } }
+        {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true,
+        }
       )
-      .then((response) => {
+      .then(async (response) => {
         dispatch(setUserDetails(response?.data?.user));
-        localStorage.setItem("involveTk", response?.data?.token);
         if (response?.data?.hash) {
           localStorage.setItem("involveUH", response?.data?.hash);
           setMsg({
@@ -48,8 +52,14 @@ const LoginForm = () => {
             error: false,
           });
           setShowOTP(true);
-        } else {
-          push("/");
+        } else if (!token) {
+          localStorage.removeItem("__involve_login_error");
+          const value = await getToken(true);
+          console.log(token);
+          if (value) {
+            dispatch(setAccessToken(token));
+            push("/");
+          }
         }
       })
       .catch((err) => {
@@ -77,8 +87,7 @@ const LoginForm = () => {
       )
       .then((response) => {
         dispatch(setUserDetails(response?.data?.user));
-        localStorage.removeItem("involveUH"),
-        push("/");
+        localStorage.removeItem("involveUH"), push("/");
       })
       .catch((err) => {
         setMsg({

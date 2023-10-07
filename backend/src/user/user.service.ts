@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as sgEmail from '@sendgrid/mail';
-import { RegisterUserDto, UserResponseDto } from './user.dto';
+import { RegisterUserDto, UserResponseDto } from './dto/user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User } from '@prisma/client';
 
